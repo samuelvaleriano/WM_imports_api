@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.database import engine, Base
+import app.db.models as models
+from app.api.v1.produtos import router as produtos_router
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="WM_Imports API")
 
@@ -18,6 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(produtos_router, prefix="/api/v1")
+
 @app.get("/")
-def home():
+def read_root():
     return {"status": "API WM_Imports rodando com sucesso!"}
