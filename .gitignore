@@ -1,0 +1,6 @@
+Plaintext
+
+.venv/
+.env
+__pycache__/
+*.pyc
