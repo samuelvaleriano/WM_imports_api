@@ -11,7 +11,11 @@ class UsuarioLogin(BaseModel):
     email: EmailStr
     senha: str
 
-    
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class UsuarioResponse(BaseModel):
     id: int
     nome: Optional[str] = None
