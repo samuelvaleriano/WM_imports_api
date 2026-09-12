@@ -1,5 +1,6 @@
 import enum
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text, Enum, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
@@ -8,6 +9,16 @@ class TamanhoEnum(str, enum.Enum):
     M = "M"
     G = "G"
     GG = "GG"
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100), nullable=True)
+    email = Column(String(150), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    ativo = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
 class Categoria(Base):
     __tablename__ = "categorias"

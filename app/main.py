@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine, Base
 import app.db.models as models
 from app.api.v1.produtos import router as produtos_router
+from app.api.v1.auth import router as auth_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(produtos_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
