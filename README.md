@@ -108,6 +108,16 @@ Passo a Passo
         °   Swagger UI: http://127.0.0.1:8000/docs
         °   ReDoc: http://127.0.0.1:8000/redoc
 
+### Consulta de CEP
+
+Use `GET /api/v1/cep/{cep}` para consultar o ViaCEP pelo backend. O CEP pode ser enviado com ou sem hífen, por exemplo:
+
+```text
+GET http://127.0.0.1:8000/api/v1/cep/01001-000
+```
+
+A resposta inclui `cep`, `logradouro`, `complemento`, `bairro`, `localidade` e `uf`. O endpoint retorna `422` para formato inválido, `404` quando o CEP não é encontrado e `502` quando o ViaCEP está indisponível ou retorna dados inválidos.
+
 📝 Padrão de Commits (Conventional Commits)
 
 Neste repositório utilizaremos a convenção Conventional Commits:
