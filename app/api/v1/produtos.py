@@ -1,11 +1,11 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from app.db.database import get_db
-from app.db.models import Categoria, Produto, Subcategoria, Time, Usuario
-from app.schemas.catalog import ProdutoResponse, ProdutoCreate
+from app.db.models import Categoria, Produto, Subcategoria, Time, Usuario, VariacaoProduto
+from app.schemas.catalog import ProdutoResponse, ProdutoCreate, ProdutoUpdate
 from app.core.security import require_admin
 
 router = APIRouter(
@@ -70,8 +70,71 @@ def criar_produto(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_admin)
 ):
-    novo_produto = Produto(**produto_data.model_dump())
+    dados_produto = produto_data.model_dump()
+    if dados_produto.get("imagem_url"):
+        dados_produto["imagem_capa"] = dados_produto["imagem_url"]
+    if not dados_produto.get("imagem_capa"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Envie imagem_url ou imagem_capa antes de cadastrar o produto.",
+        )
+    variacoes = dados_produto.pop("variacoes", [])
+
+    novo_produto = Produto(**dados_produto)
+    novo_produto.variacoes = [
+        VariacaoProduto(**variacao) for variacao in variacoes
+    ]
     db.add(novo_produto)
     db.commit()
     db.refresh(novo_produto)
     return novo_produto
+
+
+@router.patch("/{produto_id}", response_model=ProdutoResponse)
+def atualizar_produto(
+    produto_id: int,
+    produto_data: ProdutoUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_admin),
+):
+    produto = db.query(Produto).filter(Produto.id == produto_id).first()
+    if produto is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produto não encontrado.",
+        )
+
+    dados = produto_data.model_dump(exclude_unset=True)
+    variacoes = dados.pop("variacoes", None)
+    if "imagem_url" in dados and dados["imagem_url"]:
+        dados["imagem_capa"] = dados["imagem_url"]
+
+    for campo, valor in dados.items():
+        setattr(produto, campo, valor)
+
+    if variacoes is not None:
+        produto.variacoes.clear()
+        produto.variacoes.extend(
+            VariacaoProduto(**variacao) for variacao in variacoes
+        )
+
+    db.commit()
+    db.refresh(produto)
+    return produto
+
+
+@router.delete("/{produto_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_produto(
+    produto_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_admin),
+):
+    produto = db.query(Produto).filter(Produto.id == produto_id).first()
+    if produto is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produto não encontrado.",
+        )
+
+    db.delete(produto)
+    db.commit()

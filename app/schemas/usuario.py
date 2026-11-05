@@ -1,21 +1,26 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import AliasChoices, BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
 class UsuarioCreate(BaseModel):
     nome: Optional[str] = None
     email: EmailStr
-    senha: str
+    senha: str = Field(validation_alias=AliasChoices("senha", "password"))
 
 class UsuarioLogin(BaseModel):
     email: EmailStr
-    senha: str
+    senha: str = Field(validation_alias=AliasChoices("senha", "password"))
+    perfil: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("perfil", "role", "tipo", "tipo_usuario"),
+    )
 
 class UsuarioResponse(BaseModel):
     id: int
     nome: Optional[str] = None
     email: EmailStr
     role: str
+    perfil: str
     ativo: bool
     criado_em: datetime
 

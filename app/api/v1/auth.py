@@ -15,9 +15,22 @@ router = APIRouter(
     tags=["Autenticação"]
 )
 
+def normalizar_email(email: str) -> str:
+    return email.strip().lower()
+
+def perfil_corresponde(usuario: Usuario, perfil: str) -> bool:
+    perfil_normalizado = perfil.strip().lower()
+    if perfil_normalizado in {"admin", "administrador", "lojista"}:
+        return usuario.role == "admin"
+    if perfil_normalizado in {"cliente", "usuario", "comum"}:
+        return usuario.role == "cliente"
+    return False
+
+
 @router.post("/register", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def cadastrar_usuario(usuario_data: UsuarioCreate, db: Session = Depends(get_db)):
-    usuario_existente = db.query(Usuario).filter(Usuario.email == usuario_data.email).first()
+    email = normalizar_email(str(usuario_data.email))
+    usuario_existente = db.query(Usuario).filter(Usuario.email == email).first()
     if usuario_existente:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -26,7 +39,7 @@ def cadastrar_usuario(usuario_data: UsuarioCreate, db: Session = Depends(get_db)
 
     novo_usuario = Usuario(
         nome=usuario_data.nome,
-        email=usuario_data.email,
+        email=email,
         hashed_password=hash_password(usuario_data.senha)
     )
     
@@ -37,7 +50,8 @@ def cadastrar_usuario(usuario_data: UsuarioCreate, db: Session = Depends(get_db)
 
 @router.post("/login", response_model=Token)
 def login_usuario(credentials: UsuarioLogin, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.email == credentials.email).first()
+    email = normalizar_email(str(credentials.email))
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
     if not usuario:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,6 +62,12 @@ def login_usuario(credentials: UsuarioLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas."
+        )
+
+    if credentials.perfil and not perfil_corresponde(usuario, credentials.perfil):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este acesso não pertence ao perfil selecionado.",
         )
 
     token_acesso = create_access_token(data={"sub": usuario.email, "id": usuario.id})
