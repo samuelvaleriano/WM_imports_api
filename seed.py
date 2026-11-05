@@ -1,5 +1,41 @@
+import os
+
 from app.db.database import SessionLocal
-from app.db.models import Categoria, Subcategoria, Time, Produto, VariacaoProduto, TamanhoEnum
+from app.db.models import (
+    Categoria,
+    Produto,
+    Subcategoria,
+    Time,
+    Usuario,
+    VariacaoProduto,
+    TamanhoEnum,
+)
+from app.core.security import hash_password
+
+
+def criar_admin_padrao():
+    email = os.getenv("ADMIN_EMAIL", "admin@wmimports.com")
+    senha = os.getenv("ADMIN_PASSWORD", "Admin@123456")
+    nome = os.getenv("ADMIN_NAME", "Administrador")
+
+    db = SessionLocal()
+    try:
+        admin = db.query(Usuario).filter(Usuario.email == email).first()
+        if admin is None:
+            db.add(
+                Usuario(
+                    nome=nome,
+                    email=email,
+                    hashed_password=hash_password(senha),
+                    role="admin",
+                )
+            )
+            db.commit()
+        elif admin.role != "admin":
+            admin.role = "admin"
+            db.commit()
+    finally:
+        db.close()
 
 def popular_banco():
     db = SessionLocal()

@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from app.db.database import get_db
 from app.db.models import Categoria, Produto, Subcategoria, Time, Usuario
 from app.schemas.catalog import ProdutoResponse, ProdutoCreate
-from app.core.security import get_current_user
+from app.core.security import require_admin
 
 router = APIRouter(
     prefix="/produtos",
@@ -68,7 +68,7 @@ def listar_produtos(
 def criar_produto(
     produto_data: ProdutoCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(require_admin)
 ):
     novo_produto = Produto(**produto_data.model_dump())
     db.add(novo_produto)

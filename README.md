@@ -102,11 +102,25 @@ Passo a Passo
 
     5.  Execute a aplicação (Uvicorn):
         Bash
-        uvicorn main:app --reload
+        uvicorn app.main:app --reload
     
     6.  Acesse a Documentação da API:
         °   Swagger UI: http://127.0.0.1:8000/docs
         °   ReDoc: http://127.0.0.1:8000/redoc
+
+### Login padrão do lojista (desenvolvimento)
+
+Na inicialização, o backend cria o administrador caso ele ainda não exista:
+
+```text
+E-mail: admin@wmimports.com
+Senha: Admin@123456
+Perfil: admin
+```
+
+O cadastro é idempotente: reiniciar a API não duplica o usuário. Para alterar as
+credenciais, defina `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `ADMIN_NAME` no arquivo
+`.env` antes de iniciar o backend. Em produção, use uma senha diferente.
 
 ### Consulta de CEP
 
