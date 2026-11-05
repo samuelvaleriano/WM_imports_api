@@ -9,7 +9,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.cep import router as cep_router
 from app.api.v1.produtos import router as produtos_router
-from seed import criar_admin_padrao
+from seed import criar_admin_padrao, sincronizar_catalogo
 
 Base.metadata.create_all(bind=engine)
 if "usuarios" in inspect(engine).get_table_names():
@@ -17,10 +17,45 @@ if "usuarios" in inspect(engine).get_table_names():
     if "role" not in colunas_usuario:
         with engine.begin() as connection:
             connection.execute(
-                text("ALTER TABLE usuarios ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'cliente'")
+                text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'cliente'")
             )
-
+if "produtos" in inspect(engine).get_table_names():
+    colunas_produto = {coluna["name"] for coluna in inspect(engine).get_columns("produtos")}
+    if "imagem_url" not in colunas_produto:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE produtos ADD COLUMN IF NOT EXISTS imagem_url VARCHAR(500)")
+            )
+    if "desconto_percentual" not in colunas_produto:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE produtos ADD COLUMN IF NOT EXISTS "
+                    "desconto_percentual DOUBLE PRECISION NOT NULL DEFAULT 0"
+                )
+            )
+if "hero_banners" in inspect(engine).get_table_names():
+    colunas_banner = {
+        coluna["name"] for coluna in inspect(engine).get_columns("hero_banners")
+    }
+    novas_colunas_banner = {
+        "badge": "VARCHAR(100)",
+        "titulo": "VARCHAR(200)",
+        "subtitulo": "VARCHAR(500)",
+        "link": "VARCHAR(500)",
+        "texto_botao": "VARCHAR(100)",
+    }
+    for nome_coluna, tipo_coluna in novas_colunas_banner.items():
+        if nome_coluna not in colunas_banner:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        f"ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS "
+                        f"{nome_coluna} {tipo_coluna}"
+                    )
+                )
 criar_admin_padrao()
+sincronizar_catalogo()
 
 app = FastAPI(title="WM_Imports API")
 
@@ -41,6 +76,7 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api")
 app.include_router(cep_router, prefix="/api/v1")
 app.include_router(produtos_router, prefix="/api/v1")
 

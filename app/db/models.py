@@ -21,6 +21,23 @@ class Usuario(Base):
     ativo = Column(Boolean, default=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
+    @property
+    def perfil(self):
+        return "lojista" if self.role == "admin" else "cliente"
+
+class HeroBanner(Base):
+    __tablename__ = "hero_banners"
+
+    id = Column(Integer, primary_key=True)
+    imagem_url = Column(String(500), nullable=False)
+    frase_promocional = Column(String(200), nullable=False)
+    badge = Column(String(100), nullable=True)
+    titulo = Column(String(200), nullable=True)
+    subtitulo = Column(String(500), nullable=True)
+    link = Column(String(500), nullable=True)
+    texto_botao = Column(String(100), nullable=True)
+    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
 class Categoria(Base):
     __tablename__ = "categorias"
 
@@ -61,7 +78,9 @@ class Produto(Base):
     nome = Column(String(150), nullable=False)
     descricao = Column(Text, nullable=True)
     preco = Column(Float, nullable=False)
+    desconto_percentual = Column(Float, nullable=False, default=0, server_default="0")
     imagem_capa = Column(String(255), nullable=False)
+    imagem_url = Column(String(500), nullable=True)
     ativo = Column(Boolean, default=True)
 
     time = relationship("Time", back_populates="produtos")

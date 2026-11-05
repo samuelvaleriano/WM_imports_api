@@ -62,7 +62,7 @@ def get_current_user(
     return usuario
 
 def require_admin(current_user: Usuario = Depends(get_current_user)) -> Usuario:
-    if current_user.role != "admin":
+    if current_user.role not in {"admin", "lojista"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso restrito ao lojista.",

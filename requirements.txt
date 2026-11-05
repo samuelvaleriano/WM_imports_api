@@ -7,6 +7,7 @@ fastapi==0.141.1
 greenlet==3.5.5
 h11==0.16.0
 idna==3.18
+httpx==0.28.1
 email-validator==2.3.0
 passlib[bcrypt]==1.7.4
 psycopg2-binary==2.9.12
@@ -14,6 +15,7 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 python-dotenv==1.2.3
 python-jose==3.5.0
+python-multipart==0.0.20
 SQLAlchemy==2.0.52
 starlette==1.6.0
 typing-inspection==0.4.4

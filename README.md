@@ -122,6 +122,82 @@ O cadastro é idempotente: reiniciar a API não duplica o usuário. Para alterar
 credenciais, defina `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `ADMIN_NAME` no arquivo
 `.env` antes de iniciar o backend. Em produção, use uma senha diferente.
 
+### Upload de imagens e cadastro de produtos
+
+Configure no `.env` as credenciais do Supabase Storage:
+
+```text
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_STORAGE_BUCKET=product-images
+```
+
+Crie no Supabase um bucket público chamado `product-images` (ou use o nome
+definido em `SUPABASE_STORAGE_BUCKET`). O endpoint protegido para upload aceita
+somente PNG/WEBP com até 5 MB:
+
+```text
+POST /api/v1/admin/upload
+POST /api/admin/upload
+```
+
+Envie `multipart/form-data` com o campo `arquivo`. A resposta contém `url` e
+`imagem_url`. Use esse valor no cadastro do produto:
+
+```json
+{
+  "nome": "Camisa Flamengo",
+  "preco": 349.9,
+  "imagem_url": "https://seu-projeto.supabase.co/storage/v1/object/public/product-images/products/arquivo.webp",
+  "time_id": 1,
+  "descricao": "Camisa oficial",
+  "ativo": true,
+  "variacoes": [
+    {"tamanho": "M", "estoque": 10},
+    {"tamanho": "G", "estoque": 5}
+  ]
+}
+```
+
+O backend salva a URL em `produtos.imagem_url` e também em
+`produtos.imagem_capa` para manter o catálogo atual compatível.
+
+O cadastro também aceita `desconto_percentual`, com valor entre `0` e `100`.
+O campo é persistido em `produtos.desconto_percentual`; `0` significa que o
+produto não está em promoção. O frontend pode calcular o preço promocional com:
+
+```text
+preco_promocional = preco * (1 - desconto_percentual / 100)
+```
+
+Endpoints administrativos para preencher o formulário:
+
+```text
+GET /api/v1/admin/catalog/categories
+GET /api/v1/admin/catalog/subcategories?categoria_id=1
+GET /api/v1/admin/catalog/teams?subcategoria_id=1
+```
+
+Todos exigem `Authorization: Bearer <access_token>` de um usuário `admin`.
+
+### Banner principal
+
+O banner principal é persistido na tabela `hero_banners` e pode ser gerenciado
+pelo lojista:
+
+```text
+GET   /api/v1/admin/hero-banner
+PATCH /api/v1/admin/hero-banner
+POST  /api/v1/admin/upload
+```
+
+O `PATCH` recebe `{ "campanhas": [...] }`. Cada campanha pode ter `id` para
+atualizar uma existente ou omitir o campo para criar uma nova. Campanhas que
+não vierem na lista são removidas. `imagem_url` deve ser uma URL HTTP/HTTPS
+pública e `frase_promocional` não pode ser vazia. O upload retorna
+`imagem_url` e aceita somente PNG/WEBP com até 5 MB. O `GET` sempre retorna
+`{ "campanhas": [...] }`, inclusive quando a lista está vazia.
+
 ### Consulta de CEP
 
 Use `GET /api/v1/cep/{cep}` para consultar o ViaCEP pelo backend. O CEP pode ser enviado com ou sem hífen, por exemplo:
