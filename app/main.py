@@ -9,6 +9,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.cep import router as cep_router
 from app.api.v1.produtos import router as produtos_router
+from app.api.v1.pagamentos import router as pagamentos_router
 from seed import criar_admin_padrao, sincronizar_catalogo
 
 Base.metadata.create_all(bind=engine)
@@ -79,6 +80,7 @@ app.include_router(admin_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api")
 app.include_router(cep_router, prefix="/api/v1")
 app.include_router(produtos_router, prefix="/api/v1")
+app.include_router(pagamentos_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():

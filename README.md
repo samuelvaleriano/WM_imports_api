@@ -99,6 +99,7 @@ Passo a Passo
         SECRET_KEY=sua_chave_secreta_jwt_aqui
         ALGORITHM=HS256
         ACCESS_TOKEN_EXPIRE_MINUTES=1440
+        MP_ACCESS_TOKEN=TEST-seu_access_token_de_teste
 
     5.  Execute a aplicação (Uvicorn):
         Bash
@@ -107,6 +108,49 @@ Passo a Passo
     6.  Acesse a Documentação da API:
         °   Swagger UI: http://127.0.0.1:8000/docs
         °   ReDoc: http://127.0.0.1:8000/redoc
+
+### Pagamentos com Mercado Pago
+
+Instale as dependências com `pip install -r requirements.txt` e configure
+`MP_ENVIRONMENT=test` e `MP_ACCESS_TOKEN` no `.env` do backend usando o Access
+Token de teste do vendedor durante o desenvolvimento. O token pode começar
+com `TEST-` ou `APP_USR-`; confirme que o seletor do painel do Mercado Pago está
+em **Teste** antes de copiar a credencial. Como `APP_USR-` também pode identificar
+credenciais de produção, o prefixo sozinho não permite distinguir os ambientes.
+Para produção, defina `MP_ENVIRONMENT=production` junto do Access Token de
+produção.
+Nunca envie o token ao frontend nem o adicione ao Git. O `.env.example` contém
+apenas valores ilustrativos.
+
+Os endpoints exigem autenticação Bearer. O frontend deve tokenizar o cartão
+com o SDK oficial do Mercado Pago e enviar somente o token gerado; não envie
+número do cartão nem código de segurança para esta API.
+O backend integra com a Orders API (`POST /v1/orders`) e consulta o status
+pela order criada (`GET /v1/orders/{id}`).
+
+```text
+POST /api/v1/pagamentos/pix
+POST /api/v1/pagamentos/cartao
+GET  /api/v1/pagamentos/{payment_id}/status
+```
+
+Exemplo de criação de PIX:
+
+```json
+{
+  "itens": [{"variacao_id": 1, "quantidade": 1}],
+  "cpf": "529.982.247-25"
+}
+```
+
+Para cartão, envie os mesmos campos e também `token`, `installments` e
+`payment_method_id`. A API calcula o valor com
+os preços e descontos atuais do banco; não aceite valores enviados pelo cliente.
+O `payment_id` retornado pode ser consultado na rota de status, que só permite
+acesso ao pedido do usuário autenticado. O estoque é decrementado uma única vez
+quando a consulta confirma aprovação. Esta primeira etapa usa consulta ativa do
+frontend; ainda não há webhook para atualizar pedidos quando o cliente sai da
+página.
 
 ### Login padrão do lojista (desenvolvimento)
 

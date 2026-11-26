@@ -95,3 +95,35 @@ class VariacaoProduto(Base):
     estoque = Column(Integer, default=0)
 
     produto = relationship("Produto", back_populates="variacoes")
+
+
+class Pedido(Base):
+    __tablename__ = "pedidos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    total = Column(Float, nullable=False)
+    metodo_pagamento = Column(String(20), nullable=False)
+    status_pagamento = Column(String(30), nullable=False, default="pending")
+    mp_payment_id = Column(String(100), unique=True, nullable=True, index=True)
+    pix_qr_code = Column(Text, nullable=True)
+    pix_qr_code_base64 = Column(Text, nullable=True)
+    estoque_baixado = Column(Boolean, nullable=False, default=False)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+    itens = relationship("ItemPedido", back_populates="pedido", cascade="all, delete-orphan")
+
+
+class ItemPedido(Base):
+    __tablename__ = "itens_pedido"
+
+    id = Column(Integer, primary_key=True)
+    pedido_id = Column(Integer, ForeignKey("pedidos.id"), nullable=False, index=True)
+    variacao_id = Column(Integer, ForeignKey("variacoes_produto.id"), nullable=False)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
+    produto_nome = Column(String(150), nullable=False)
+    tamanho = Column(String(10), nullable=False)
+    quantidade = Column(Integer, nullable=False)
+    preco_unitario = Column(Float, nullable=False)
+
+    pedido = relationship("Pedido", back_populates="itens")
